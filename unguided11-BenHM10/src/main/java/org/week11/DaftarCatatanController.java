@@ -34,12 +34,21 @@ public class DaftarCatatanController implements Initializable {
     private TableColumn<Catatan, String> kategori;
     @FXML
     private ChoiceBox<String> cbKategori;
+    @FXML
+    private TextField searchBox;
     private final String DB_URL = "jdbc:sqlite:catatanku.db";
     private Connection connection;
+    private FilteredList<Catatan> filteredList;
     Catatan selectedCatatan;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        filteredList = new FilteredList<>(table.getItems(), p -> true);
+        table.setItems(filteredList);
+        searchBox.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredList.setPredicate(createPredicate(newValue));
+                });
+
         catatanObservableList = FXCollections.observableArrayList();
         table.setItems(catatanObservableList);
         id.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -66,6 +75,22 @@ public class DaftarCatatanController implements Initializable {
         cbKategori.getItems().add(Catatan.CATATAN_KHUSUS);
         cbKategori.getItems().add(Catatan.CATATAN_PERCINTAAN);
         bersihkan();
+    }
+
+    private Predicate<Catatan> createPredicate(String searchText) {
+        return catatan -> {
+            if (searchText == null || searchText.isEmpty()) return true;
+            // Sesuaikan dengan kriteria pencarian yang diinginkan di sini
+            return catatan.getJudul().toLowerCase().contains(searchText.toLowerCase())
+                    || catatan.getKonten().toLowerCase().contains(searchText.toLowerCase())
+                    || catatan.getKategori().toLowerCase().contains(searchText.toLowerCase());
+        };
+    }
+
+    private boolean searchFindsCatatan(Catatan catatan, String searchText) {
+        return (catatan.getJudul().toLowerCase().contains(searchText.toLowerCase())) ||
+                (catatan.getKonten().toLowerCase().contains(searchText.toLowerCase())) ||
+                (catatan.getKategori().toLowerCase().contains(searchText.toLowerCase()));
     }
 
     public Connection getConnection() {
@@ -106,19 +131,6 @@ public class DaftarCatatanController implements Initializable {
             e.printStackTrace();
             // Handle table creation error
         }
-    }
-
-    private Predicate<Catatan> createPredicate(String searchText) {
-        return catatan -> {
-            if (searchText == null || searchText.isEmpty()) return true;
-            return searchFindsCatatan(catatan, searchText);
-        };
-    }
-
-    private boolean searchFindsCatatan(Catatan catatan, String searchText) {
-        return (catatan.getJudul().toLowerCase().contains(searchText.toLowerCase())) ||
-                (catatan.getKonten().toLowerCase().contains(searchText.toLowerCase())) ||
-                (catatan.getKategori().toLowerCase().contains(searchText.toLowerCase()));
     }
 
     private void getAllData() {
@@ -183,6 +195,10 @@ public class DaftarCatatanController implements Initializable {
             }
         }
         bersihkan();
+    }
+    @FXML
+    public void onPieChartClicked() throws IOException {
+        Apps.openViewWithModal("pie-chart", false);
     }
     @FXML
     protected void onBtnHapus() {
